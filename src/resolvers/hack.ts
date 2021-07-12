@@ -67,7 +67,7 @@ export class HackResolver {
 
 	@Query(() => PaginatedHacks)
 	async verifiedHacks(
-		@Arg("limit") limit: number,
+		@Arg("limit", () => Int) limit: number,
 		@Arg("cursor", () => String, { nullable: true }) cursor: string | null
 	): Promise<PaginatedHacks> {
 		const realLimit = Math.min(15, limit);
@@ -99,7 +99,7 @@ export class HackResolver {
 	@UseMiddleware(isAuth)
 	@UseMiddleware(isAdmin)
 	async unverifiedHacks(
-		@Arg("limit") limit: number,
+		@Arg("limit", () => Int) limit: number,
 		@Arg("cursor", () => String, { nullable: true }) cursor: string | null
 	): Promise<PaginatedHacks> {
 		const realLimit = Math.min(15, limit);
