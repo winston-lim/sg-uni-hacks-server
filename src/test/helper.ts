@@ -37,3 +37,7 @@ export const compareHackData = (hack1: Hack, hack2: Hack) => {
 	}
 	return null;
 };
+
+export const sleep = (ms: number) => {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+};
