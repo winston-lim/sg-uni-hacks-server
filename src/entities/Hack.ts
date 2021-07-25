@@ -42,6 +42,10 @@ export class Hack extends BaseEntity {
 	@Column("text", { nullable: true })
 	updates: string | null;
 
+	@Field(() => String, { nullable: true })
+	@Column("text", { nullable: true })
+	s3Url: string | null;
+
 	@Field(() => Int)
 	@Column({ type: "int", default: 0 })
 	points!: number;

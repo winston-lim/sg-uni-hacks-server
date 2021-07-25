@@ -34,8 +34,12 @@ const start = async () => {
 		migrations: [path.join(__dirname, "./migrations/*")],
 		entities: [User, Hack, Vote],
 	});
-	console.log("USERS:", await User.find({}));
-	console.log("HACKS:", await Hack.find({}));
+	// await Vote.delete({});
+	// await Hack.delete({});
+	// await User.delete({});
+	console.log("USERS: ", await User.find({}));
+	console.log("HACKS: ", await Hack.find({}));
+	console.log("VOTES: ", await Vote.find({}));
 	await conn.runMigrations();
 
 	const app = express();
