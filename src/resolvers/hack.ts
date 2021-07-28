@@ -140,6 +140,37 @@ export class HackResolver {
 		});
 	}
 
+	@Query(() => PaginatedHacks)
+	async verifiedHacksByCategory(
+		@Arg("limit", () => Int) limit: number,
+		@Arg("cursor", () => String, { nullable: true }) cursor: string | null,
+		@Arg("category") category: string
+	): Promise<PaginatedHacks> {
+		const realLimit = Math.min(15, limit);
+		const realLimitPlusOne = realLimit + 1;
+		const replacements: any[] = [realLimitPlusOne];
+		if (cursor) {
+			replacements.push(new Date(parseInt(cursor)));
+		}
+		const hacks = await getConnection().query(
+			`
+        select h.* from hack h
+        ${
+					cursor
+						? `where h."updatedAt"< $2 and h.verified = true`
+						: "where h.verified = true"
+				} and h.category =  '${category}'
+        order by h."updatedAt" DESC
+        limit $1
+      `,
+			replacements
+		);
+		return {
+			hacks: hacks.slice(0, realLimit),
+			hasMore: hacks.length === realLimitPlusOne,
+		};
+	}
+
 	@Query(() => Hack, { nullable: true })
 	async hack(@Arg("id") id: string): Promise<Hack | undefined> {
 		return Hack.findOne(id);
@@ -235,11 +266,15 @@ export class HackResolver {
 				.delete()
 				.from(Hack)
 				.where("id= :id", { id })
-				.where("creatorId= :creatorId", {
+				.andWhere("creatorId= :creatorId", {
 					creatorId:
 						user.role === UserRole.ADMIN ? hack.creatorId : req.session.userId,
 				})
 				.execute();
+			console.log(
+				"USERHACKS",
+				await Hack.find({ where: { creatorId: req.session.userId } })
+			);
 			return true;
 		} catch (e) {
 			console.log(e);
