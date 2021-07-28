@@ -47,7 +47,13 @@ export enum Category {
 	NOTE_TAKING = "note-taking",
 	TIME_SAVER = "time-saver",
 	TIME_MANAGEMENT = "time-management",
+	HEALTH = "health",
 	PLANNING = "planning",
+	EDUCATION = "education",
+	UNIVERSITY = "university",
+	FINANCE = "finance",
+	TECHNOLOGY = "technology",
+	FASHION = "fashion",
 	OTHERS = "others",
 }
 
@@ -61,6 +67,8 @@ export class CreateHackInput {
 	category: Category;
 	@Field()
 	body: string;
+	@Field({ nullable: true })
+	s3Url?: string;
 }
 
 @InputType()
