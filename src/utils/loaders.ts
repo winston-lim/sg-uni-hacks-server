@@ -19,7 +19,7 @@ export const createVoteLoader = () => {
 			const votes = await Vote.findByIds(keys as any);
 			const voteIdsToVote: Record<string, Vote | null> = {};
 			votes.forEach((vote) => {
-				voteIdsToVote[`${vote.user}|${vote.hackId}`] = vote;
+				voteIdsToVote[`${vote.userId}|${vote.hackId}`] = vote;
 			});
 			return keys.map((key) => voteIdsToVote[`${key.userId}|${key.hackId}`]);
 		}
