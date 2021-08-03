@@ -262,17 +262,17 @@ it("updates points correctly with multiple votes casted by different users", asy
 	const secondHack = await Hack.findOne(createdHack.id);
 	expect(secondHack!.points).toEqual(2);
 
-	await validVoteMutation(createdHack.id, -1, {
+	await validVoteMutation(createdHack.id, 0, {
 		userId: user1.id,
 		role: user1.role,
 	});
 	const thirdHack = await Hack.findOne(createdHack.id);
-	expect(thirdHack!.points).toEqual(0);
+	expect(thirdHack!.points).toEqual(1);
 
-	await validVoteMutation(createdHack.id, -1, {
+	await validVoteMutation(createdHack.id, 0, {
 		userId: user2.id,
 		role: user2.role,
 	});
 	const fourthHack = await Hack.findOne(createdHack.id);
-	expect(fourthHack!.points).toEqual(-2);
+	expect(fourthHack!.points).toEqual(0);
 });
