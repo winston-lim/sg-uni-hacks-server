@@ -65,6 +65,13 @@ export class HackResolver {
 		return `${hack.id}`;
 	}
 
+	@UseMiddleware(isAuth)
+	@UseMiddleware(isAdmin)
+	@Query(() => [Hack!])
+	async allHacks() {
+		return Hack.find({ order: { verified: "DESC" } });
+	}
+
 	@Query(() => PaginatedHacks)
 	async verifiedHacks(
 		@Arg("limit", () => Int) limit: number,
@@ -176,6 +183,41 @@ export class HackResolver {
 		return Hack.findOne(id);
 	}
 
+	@Query(() => PaginatedHacks)
+	async verifiedHacksBySearchTerm(
+		@Arg("limit", () => Int) limit: number,
+		@Arg("cursor", () => String, { nullable: true }) cursor: string | null,
+		@Arg("searchTerm") searchTerm: string
+	): Promise<PaginatedHacks> {
+		const realLimit = Math.min(15, limit);
+		const realLimitPlusOne = realLimit + 1;
+		const replacements: any[] = [realLimitPlusOne];
+		if (cursor) {
+			replacements.push(new Date(parseInt(cursor)));
+		}
+		const hacks = await getConnection().query(
+			`
+        select h.* from hack h
+        ${
+					cursor
+						? `where h."updatedAt"< $2 and h.verified = true`
+						: "where h.verified = true"
+				}${
+				searchTerm !== ""
+					? ` and (h.title ILIKE '%${searchTerm}%' or h.description ILIKE '%${searchTerm}%')`
+					: ""
+			}
+        order by h."updatedAt" DESC
+        limit $1
+      `,
+			replacements
+		);
+		return {
+			hacks: hacks.slice(0, realLimit),
+			hasMore: hacks.length === realLimitPlusOne,
+		};
+	}
+
 	@Mutation(() => Hack)
 	@UseMiddleware(isAuth)
 	async createHack(
@@ -200,8 +242,9 @@ export class HackResolver {
 		@Ctx() { req }: MyContext
 	): Promise<Hack | null> {
 		const hack = await Hack.findOne(id);
+		UserRole;
 		if (!hack) return null;
-		if (req.session.userId !== hack.creatorId) {
+		if (req.session.userId !== hack.creatorId && req.session.role !== "admin") {
 			throw new Error("not enough permissions");
 		}
 		if (hack.updates) {
@@ -271,10 +314,6 @@ export class HackResolver {
 						user.role === UserRole.ADMIN ? hack.creatorId : req.session.userId,
 				})
 				.execute();
-			console.log(
-				"USERHACKS",
-				await Hack.find({ where: { creatorId: req.session.userId } })
-			);
 			return true;
 		} catch (e) {
 			console.log(e);
@@ -302,8 +341,8 @@ export class HackResolver {
 		@Arg("value", () => Int) value: number,
 		@Ctx() { req }: MyContext
 	) {
-		const isUpvote = value !== -1;
-		const voteValue = isUpvote ? 1 : -1;
+		const isUpvote = value === 1;
+		const voteValue = isUpvote ? 1 : 0;
 		const { userId } = req.session;
 		const hack = await Hack.findOne(hackId);
 		if (!hack!.verified) {
@@ -327,7 +366,7 @@ export class HackResolver {
 				set points = points + $1
 				where "id" = $2
 				`,
-					[2 * voteValue, hackId]
+					[voteValue === 0 ? -1 : 1, hackId]
 				);
 			});
 			return true;
