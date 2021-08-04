@@ -218,6 +218,39 @@ export class HackResolver {
 		};
 	}
 
+	@UseMiddleware(isAuth)
+	@Query(() => PaginatedHacks)
+	async userLikedHacks(
+		@Arg("limit", () => Int) limit: number,
+		@Arg("cursor", () => String, { nullable: true }) cursor: string | null,
+		@Ctx() { req }: MyContext
+	): Promise<PaginatedHacks> {
+		const realLimit = Math.min(15, limit);
+		const realLimitPlusOne = realLimit + 1;
+		const replacements: any[] = [realLimitPlusOne];
+		if (cursor) {
+			replacements.push(new Date(parseInt(cursor)));
+		}
+		let query = createQueryBuilder(Hack, "h")
+			.leftJoinAndSelect("h.votes", "vote")
+			.andWhere("vote.userId =  :user", { user: req.session.userId })
+			.andWhere("vote.value > 0")
+			.andWhere("h.verified = true");
+		if (cursor) {
+			query = query.andWhere("h.updatedAt < :cursor", {
+				cursor: new Date(parseInt(cursor)).toISOString(),
+			});
+		}
+		const hacks = await query
+			.orderBy("h.updatedAt", "DESC")
+			.limit(realLimitPlusOne)
+			.getMany();
+		return {
+			hacks: hacks.slice(0, realLimit) as Hack[],
+			hasMore: hacks.length === realLimitPlusOne,
+		};
+	}
+
 	@Mutation(() => Hack)
 	@UseMiddleware(isAuth)
 	async createHack(
