@@ -11,7 +11,7 @@ import {
 	Root,
 	UseMiddleware,
 } from "type-graphql";
-import { getConnection } from "typeorm";
+import { createQueryBuilder, getConnection } from "typeorm";
 import { Hack } from "../entities/Hack";
 import { User, UserRole } from "../entities/User";
 import { Vote } from "../entities/Vote";
@@ -49,7 +49,7 @@ export class HackResolver {
 			hackId: hack.id,
 			userId: req.session.userId,
 		});
-		return vote ? vote.value : null;
+		return vote && vote.value > 0 ? vote.value : null;
 	}
 
 	@FieldResolver(() => Int)
@@ -264,6 +264,7 @@ export class HackResolver {
 			return null;
 		}
 		hack.verified = true;
+		hack.updatedAt = new Date();
 		try {
 			return await hack.save();
 		} catch (e) {
