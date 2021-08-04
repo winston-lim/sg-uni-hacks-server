@@ -73,6 +73,10 @@ export class Hack extends BaseEntity {
 	createdAt: Date;
 
 	@Field(() => String)
-	@Column({ nullable: true })
+	@Column({
+		default: () => "CURRENT_TIMESTAMP",
+		onUpdate: "CURRENT_TIMESTAMP",
+		nullable: true,
+	})
 	updatedAt: Date;
 }
