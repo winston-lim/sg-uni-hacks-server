@@ -11,7 +11,7 @@ import {
 	Root,
 	UseMiddleware,
 } from "type-graphql";
-import { createQueryBuilder, getConnection } from "typeorm";
+import { createQueryBuilder, getConnection, MoreThan } from "typeorm";
 import { Hack } from "../entities/Hack";
 import { User, UserRole } from "../entities/User";
 import { Vote } from "../entities/Vote";
@@ -249,6 +249,17 @@ export class HackResolver {
 			hacks: hacks.slice(0, realLimit) as Hack[],
 			hasMore: hacks.length === realLimitPlusOne,
 		};
+	}
+
+	@Query(() => [Hack])
+	async mostLikedHacks(): Promise<Hack[]> {
+		return Hack.find({
+			where: { verified: true, points: MoreThan(0) },
+			order: {
+				points: "DESC",
+			},
+			take: 4,
+		});
 	}
 
 	@Mutation(() => Hack)
