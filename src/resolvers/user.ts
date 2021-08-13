@@ -36,7 +36,6 @@ export class UserResolver {
 	@Mutation(() => UserResponse)
 	async register(
 		@Arg("options") options: UsernamePasswordInput,
-		@Arg("admin", () => Boolean, { nullable: true }) admin: boolean,
 		@Ctx() { req }: MyContext
 	): Promise<UserResponse> {
 		const { username, email, password } = options;
@@ -53,7 +52,7 @@ export class UserResolver {
 					username,
 					email,
 					password: hashedPassword,
-					role: admin ? UserRole.ADMIN : UserRole.REGULAR,
+					role: UserRole.REGULAR,
 				})
 				.returning("*")
 				.execute();
