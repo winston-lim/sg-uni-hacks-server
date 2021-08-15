@@ -1,4 +1,4 @@
-import { createConnection, getConnection } from "typeorm";
+import { createConnection } from "typeorm";
 import path from "path";
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
@@ -15,7 +15,7 @@ import { Hack } from "./entities/Hack";
 import { Vote } from "./entities/Vote";
 import { createUserLoader, createVoteLoader } from "./utils/loaders";
 import { HackResolver } from "./resolvers/hack";
-import argon2 from "argon2";
+import { createAdmin } from "./utils/createAdmin";
 require("dotenv").config();
 declare module "express-session" {
 	export interface SessionData {
@@ -97,26 +97,7 @@ const start = async () => {
 	app.listen(4000, () => {
 		console.log("Server started on 4000");
 	});
-	const hashedPassword = await argon2.hash(
-		process.env.ADMIN_PASSWORD || "default"
-	);
-	try {
-		await getConnection()
-			.createQueryBuilder()
-			.insert()
-			.into(User)
-			.values({
-				username: "admin1",
-				email: "winston_lim1@hotmail.com",
-				password: hashedPassword,
-				role: UserRole.ADMIN,
-			})
-			.returning("*")
-			.execute();
-		console.log("Created admin!");
-	} catch (e) {
-		console.log("Error creating admin: MESSAGE= ", e.message);
-	}
+	await createAdmin();
 };
 
 start();
