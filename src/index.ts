@@ -1,3 +1,4 @@
+import "dotenv-safe/config";
 import { createConnection } from "typeorm";
 import path from "path";
 import { ApolloServer } from "apollo-server-express";
@@ -16,7 +17,6 @@ import { Vote } from "./entities/Vote";
 import { createUserLoader, createVoteLoader } from "./utils/loaders";
 import { HackResolver } from "./resolvers/hack";
 import { createAdmin } from "./utils/createAdmin";
-require("dotenv").config();
 declare module "express-session" {
 	export interface SessionData {
 		userId: string;
@@ -27,11 +27,9 @@ declare module "express-session" {
 const start = async () => {
 	const conn = await createConnection({
 		type: "postgres",
-		database: "sg-uni-hacks",
-		username: "postgres",
-		password: "6928891Zz",
+		url: process.env.DATABASE_URL,
 		logging: true,
-		synchronize: true,
+		// synchronize: true,
 		migrations: [path.join(__dirname, "./migrations/*")],
 		entities: [User, Hack, Vote],
 	});
@@ -46,8 +44,8 @@ const start = async () => {
 	const app = express();
 
 	const RedisStore = connectRedis(session);
-	const redis = new Redis();
-
+	const redis = new Redis(process.env.REDIS_URL);
+	app.set("proxy", 1);
 	app.use(
 		session({
 			name: COOKIE_NAME,
@@ -61,16 +59,17 @@ const start = async () => {
 				httpOnly: true,
 				secure: __prod__,
 				sameSite: "lax",
+				domain: __prod__ ? ".winston-lim.com" : undefined,
 			},
 			saveUninitialized: false,
-			secret: "random secret", //to set later on
+			secret: process.env.SESSION_SECRET, //to set later on
 			resave: false,
 		})
 	);
 
 	app.use(
 		cors({
-			origin: "http://localhost:3000", //to set later on
+			origin: process.env.CORS_ORIGIN, //to set later on
 			credentials: true,
 		})
 	);
@@ -94,7 +93,7 @@ const start = async () => {
 		cors: false,
 	});
 
-	app.listen(4000, () => {
+	app.listen(parseInt(process.env.PORT), () => {
 		console.log("Server started on 4000");
 	});
 	await createAdmin();
